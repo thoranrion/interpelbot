@@ -338,21 +338,35 @@ def compare_and_notify_new_answers(current_results, previous_results, mp_id, ter
             if current_replies > previous_replies:
                 new_count = current_replies - previous_replies
                 
-                # Check if any of the new replies has prolongation: true and collect author information
+                # Check all replies to determine if ALL are prolongations
+                # has_prolongation should be True only if ALL replies are prolongations
+                # If any reply is not a prolongation, it means there's a real answer
                 has_prolongation = False
                 new_reply_authors = []
                 current_replies_data = current_item.get('replies_data', [])
-                if isinstance(current_replies_data, list) and len(current_replies_data) > previous_replies:
-                    # Check only the newest replies (those beyond the previous count)
-                    new_replies = current_replies_data[previous_replies:]
+                if isinstance(current_replies_data, list) and len(current_replies_data) > 0:
+                    # Check all replies to see if all are prolongations
+                    all_are_prolongations = True
+                    has_non_prolongation_reply = False
+                    
+                    # Check only the newest replies (those beyond the previous count) for authors
+                    new_replies = current_replies_data[previous_replies:] if len(current_replies_data) > previous_replies else []
                     for reply in new_replies:
                         if isinstance(reply, dict):
-                            if reply.get('prolongation') == True:
-                                has_prolongation = True
-                            # Collect author information
+                            # Collect author information from new replies
                             author = reply.get('author', '')
                             if author and author not in new_reply_authors:
                                 new_reply_authors.append(author)
+                    
+                    # Check ALL replies to determine prolongation status
+                    for reply in current_replies_data:
+                        if isinstance(reply, dict):
+                            if reply.get('prolongation') != True:
+                                has_non_prolongation_reply = True
+                                break
+                    
+                    # has_prolongation = True only if all replies are prolongations and there's no real answer
+                    has_prolongation = not has_non_prolongation_reply and len(current_replies_data) > 0
                 
                 # Convert MP IDs to names only for interpelations with new answers
                 from_field = current_item.get('from', '')
@@ -405,19 +419,26 @@ def compare_and_notify_new_answers(current_results, previous_results, mp_id, ter
             # New interpellation with answers
             current_replies = current_item.get('replies', 0)
             if current_replies > 0:
-                # Check if any of the replies has prolongation: true and collect author information
+                # Check all replies to determine if ALL are prolongations
+                # has_prolongation should be True only if ALL replies are prolongations
+                # If any reply is not a prolongation, it means there's a real answer
                 has_prolongation = False
                 reply_authors = []
                 current_replies_data = current_item.get('replies_data', [])
                 if isinstance(current_replies_data, list):
+                    # Check if all replies are prolongations
+                    has_non_prolongation_reply = False
                     for reply in current_replies_data:
                         if isinstance(reply, dict):
-                            if reply.get('prolongation') == True:
-                                has_prolongation = True
+                            if reply.get('prolongation') != True:
+                                has_non_prolongation_reply = True
                             # Collect author information
                             author = reply.get('author', '')
                             if author and author not in reply_authors:
                                 reply_authors.append(author)
+                    
+                    # has_prolongation = True only if all replies are prolongations and there's no real answer
+                    has_prolongation = not has_non_prolongation_reply and len(current_replies_data) > 0
                 
                 # Convert MP IDs to names only for interpelations with new answers
                 from_field = current_item.get('from', '')
