@@ -1,14 +1,11 @@
 # Use Alpine Linux for minimal image size
-FROM python:3.11-alpine
+FROM python:3.11
 
 # Set working directory
 WORKDIR /app
 
 # Install system dependencies
-RUN apk add --no-cache \
-    dcron \
-    tzdata \
-    && rm -rf /var/cache/apk/*
+RUN apt update && apt install -y cron
 
 # Copy requirements first for better caching
 COPY requirements.txt .
@@ -23,8 +20,6 @@ COPY interpelbot.py .
 RUN mkdir -p /app/data
 
 # Create crontab file (runs every hour)
-RUN echo "0 * * * * cd /app && python interpelbot.py >> /var/log/cron.log 2>&1" > /etc/crontabs/root
-
 # Create log file
 RUN touch /var/log/cron.log
 

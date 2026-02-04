@@ -11,6 +11,12 @@ on:
       - interpelbot.py
       - Dockerfile
       - .github/workflows/release.yml
+  workflow_dispatch:
+    branches: [ "main" ]
+    paths:
+      - interpelbot.py
+      - Dockerfile
+      - .github/workflows/release.yml
   pull_request:
     branches: [ "main" ]
     paths:
@@ -33,7 +39,7 @@ jobs:
         id: image
         name: Build & push Docker image
         with:
-          image: bots/interpelbot
+          image: panel/interpelbot
           tags: latest, ${{ github.sha }}, ${{ github.run_number }}
           dockerfile: ./Dockerfile
           directory: .
